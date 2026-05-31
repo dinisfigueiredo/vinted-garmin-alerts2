@@ -1,0 +1,1 @@
+# vinted-garmin-alerts2
