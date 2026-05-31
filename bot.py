@@ -8,6 +8,9 @@ TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 DOMAIN = os.getenv("VINTED_DOMAIN", "https://www.vinted.pt")
 QUERY = os.getenv("VINTED_QUERY", "garmin 255")
+
+# Configuração de limites de preço
+MIN_PRICE = float(os.getenv("MIN_PRICE", "50"))
 MAX_PRICE = float(os.getenv("MAX_PRICE", "135"))
 
 SEEN_FILE = Path("seen_ids.json")
@@ -55,7 +58,6 @@ def send_telegram(text):
 def main():
     seen = load_seen()
     
-    # Criar uma sessão para guardar os cookies automáticos da Vinted
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -64,10 +66,7 @@ def main():
     })
 
     try:
-        # Passo 1: Visitar o site principal para obter os cookies de sessão obrigatórios
         session.get(DOMAIN, timeout=15)
-        
-        # Passo 2: Chamar a API de pesquisa pública da Vinted
         api_url = f"{DOMAIN}/api/v2/catalog/items"
         params = {"search_text": QUERY, "per_page": "20"}
         
@@ -86,33 +85,31 @@ def main():
         if not item_id or item_id in seen:
             continue
 
-        # A API devolve o preço diretamente em string ou dict (ex: "120.00" ou {"amount": "120.00"})
         price_data = item.get("price")
         if isinstance(price_data, dict):
             price = price_to_float(price_data.get("amount"))
         else:
             price = price_to_float(price_data)
 
-        if price is None or price > MAX_PRICE:
+        # FILTRO DE PREÇO ATUALIZADO: Ignora se for menor que 50€ OU maior que 135€
+        if price is None or price < MIN_PRICE or price > MAX_PRICE:
             continue
 
         title = item.get("title", "Sem título")
-        # Links na API costumam vir como caminhos relativos
         url_path = item.get("url", "")
         link = url_path if url_path.startswith("http") else f"{DOMAIN}{url_path}"
 
         message = (
-            f"Garmin 255 abaixo de {MAX_PRICE:.0f}€\n"
+            f"Garmin 255 detetado! ({price:.2f}€)\n"
             f"{title}\n"
-            f"Preço: {price:.2f}€\n"
-            f"{link}"
+            f"Link: {link}"
         )
         send_telegram(message)
         new_seen.add(item_id)
         sent += 1
 
     save_seen(new_seen)
-    print(f"Enviadas {sent} notificações.")
+    print(f"Processado com sucesso. Enviadas {sent} novas notificações.")
 
 
 if __name__ == "__main__":
