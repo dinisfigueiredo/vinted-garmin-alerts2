@@ -1,3 +1,4 @@
+Python
 import json
 import os
 import re
@@ -57,45 +58,16 @@ def send_telegram(text):
 def main():
     seen = load_seen()
     
-    # Inicializa o scraper normalmente
+    # Inicializa o scraper de forma simples (evita o erro de init)
     scraper = VintedScraper(DOMAIN)
     
-    # Injeta os cabeçalhos diretamente na sessão interna do requests que o scraper usa
+    # Altera os cabeçalhos diretamente na sessão interna que faz os pedidos à Vinted
     scraper.wrapper.session.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "Accept-Language": "pt-PT,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Referer": "https://www.google.com/"
     })
-
-    items = scraper.search({"search_text": QUERY})
-    new_seen = set(seen)
-    sent = 0
-
-    for item in items:
-        item_id = str(getattr(item, "id", ""))
-        if not item_id or item_id in seen:
-            continue
-
-        price = price_to_float(getattr(item, "price", None))
-        if price is None or price > MAX_PRICE:
-            continue
-
-        title = getattr(item, "title", "Sem título")
-        link = getattr(item, "url", "") or getattr(item, "web_url", "") or f"{DOMAIN}/items/{item_id}"
-
-        message = (
-            f"Garmin 255 abaixo de {MAX_PRICE:.0f}€\n"
-            f"{title}\n"
-            f"Preço: {price:.2f}€\n"
-            f"{link}"
-        )
-        send_telegram(message)
-        new_seen.add(item_id)
-        sent += 1
-
-    save_seen(new_seen)
-    print(f"Enviadas {sent} notificações.")
 
     items = scraper.search({"search_text": QUERY})
     new_seen = set(seen)
