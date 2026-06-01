@@ -4,12 +4,14 @@ import re
 from pathlib import Path
 import requests
 
-TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+# O .strip() limpa automaticamente espaços ou quebras de linha invisíveis (%0A)
+TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
+CHAT_ID = os.environ["TELEGRAM_CHAT_ID"].strip()
+
 DOMAIN = os.getenv("VINTED_DOMAIN", "https://www.vinted.pt")
 QUERY = os.getenv("VINTED_QUERY", "garmin 255")
 
-# Configuração de limites de preço
+# Configuração de limites de preço (ignora braceletes e lixo barato)
 MIN_PRICE = float(os.getenv("MIN_PRICE", "50"))
 MAX_PRICE = float(os.getenv("MAX_PRICE", "135"))
 
@@ -58,6 +60,7 @@ def send_telegram(text):
 def main():
     seen = load_seen()
     
+    # Criar uma sessão para guardar os cookies automáticos da Vinted
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -66,7 +69,10 @@ def main():
     })
 
     try:
+        # Passo 1: Visitar o site principal para obter os cookies de sessão obrigatórios
         session.get(DOMAIN, timeout=15)
+        
+        # Passo 2: Chamar a API de pesquisa pública da Vinted
         api_url = f"{DOMAIN}/api/v2/catalog/items"
         params = {"search_text": QUERY, "per_page": "20"}
         
@@ -91,7 +97,7 @@ def main():
         else:
             price = price_to_float(price_data)
 
-        # FILTRO DE PREÇO ATUALIZADO: Ignora se for menor que 50€ OU maior que 135€
+        # Filtro de Preço: Ignora se for menor que 50€ OU maior que 135€
         if price is None or price < MIN_PRICE or price > MAX_PRICE:
             continue
 
