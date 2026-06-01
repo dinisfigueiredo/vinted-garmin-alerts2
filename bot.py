@@ -5,8 +5,8 @@ from pathlib import Path
 import requests
 
 # O .strip() limpa automaticamente espaços ou quebras de linha invisíveis (%0A)
-TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
-CHAT_ID = os.environ["TELEGRAM_CHAT_ID"].strip()
+TOKEN = "8673486620:AAGmyWAaC4ZGQv71Ud33tYGMaf2sF3tscQQ"
+CHAT_ID = "7108554349"
 
 DOMAIN = os.getenv("VINTED_DOMAIN", "https://www.vinted.pt")
 QUERY = os.getenv("VINTED_QUERY", "garmin 255")
